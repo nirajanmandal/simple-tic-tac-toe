@@ -1,26 +1,149 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { useGameState } from "./AppState";
 
-function App() {
+export default function App() {
+  const {
+    boardValue,
+    boardStatus,
+    handleSquareClick,
+    handleStepClick,
+    boardHistory,
+  } = useGameState();
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <>
+      <Row gap={20}>
+        <Column gap={20}>
+          <Status boardStatus={boardStatus} />
+          <Board boardValue={boardValue} onSquareClick={handleSquareClick} />
+        </Column>
+        <Log boardHistory={boardHistory} onStepClick={handleStepClick} />
+      </Row>
+    </>
+  );
+}
+
+export type Player = "X" | "O";
+
+export type SquareValue = Player | null;
+
+export type BoardValue = SquareValue[];
+
+export type BoardStatus =
+  | { type: "winner"; player: Player }
+  | { type: "draw" }
+  | { type: "next"; player: Player };
+
+export type BoardHistory = BoardValue[];
+
+export type StatusProps = {
+  boardStatus: BoardStatus;
+};
+
+export type SquareProps = {
+  value: SquareValue;
+  onClick: () => void;
+};
+
+export type BoardProps = {
+  boardValue: BoardValue;
+  onSquareClick: (square: number) => void;
+};
+
+export type LogProps = {
+  boardHistory: BoardHistory;
+  onStepClick: (step: number) => void;
+};
+
+function Status({ boardStatus }: StatusProps) {
+  return (
+    <div>
+      {boardStatus.type === "winner"
+        ? `Winner ${boardStatus.player}`
+        : boardStatus.type === "draw"
+        ? "Draw"
+        : `Next Player ${boardStatus.player}`}
     </div>
   );
 }
 
-export default App;
+const squareStyle: React.CSSProperties = {
+  width: "34px",
+  height: "34px",
+  background: "#fff",
+  border: "1px solid #999",
+  fontSize: "24px",
+  fontWeight: "bold",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+function Square({ value, onClick }: SquareProps) {
+  return (
+    <div style={squareStyle} onClick={onClick}>
+      {value}
+    </div>
+  );
+}
+
+function Board({ boardValue, onSquareClick }: BoardProps) {
+  const createProps = (square: number): SquareProps => {
+    return {
+      value: boardValue[square],
+      onClick: () => onSquareClick(square),
+    };
+  };
+  return (
+    <Column gap={0}>
+      <Row gap={0}>
+        <Square {...createProps(0)} />
+        <Square {...createProps(1)} />
+        <Square {...createProps(2)} />
+      </Row>
+      <Row gap={0}>
+        <Square {...createProps(3)} />
+        <Square {...createProps(4)} />
+        <Square {...createProps(5)} />
+      </Row>
+      <Row gap={0}>
+        <Square {...createProps(6)} />
+        <Square {...createProps(7)} />
+        <Square {...createProps(8)} />
+      </Row>
+    </Column>
+  );
+}
+
+function Log({ boardHistory, onStepClick }: LogProps) {
+  return (
+    <ol>
+      {boardHistory.map((_, index) => {
+        return (
+          <li key={index}>
+            <button onClick={() => onStepClick(index)}>
+              Go to {index === 0 ? "start" : `move #${index}`}
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+type LayoutProps = React.PropsWithChildren<{ gap: number }>;
+
+const Row = React.memo(({ gap, children }: LayoutProps) => {
+  return (
+    <div style={{ display: "flex", flexDirection: "row", gap: gap }}>
+      {children}
+    </div>
+  );
+});
+
+const Column = React.memo(({ gap, children }: LayoutProps) => {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: gap }}>
+      {children}
+    </div>
+  );
+});
